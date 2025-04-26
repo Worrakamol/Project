@@ -12,11 +12,15 @@ import pickle
 # โหลด model และ encoders
 @st.cache_resource
 def load_model():
-    model = pickle.load(open('loan_approval_model.pkl', 'rb'))
-    status_encoder = pickle.load(open('employment_encoder.pkl', 'rb'))
-    approval_encoder = pickle.load(open('approval_encoder.pkl', 'rb'))
+    with open('loan_approval_model.pkl', 'rb') as f:
+        model = pickle.load(f)
+    with open('employment_status_encoder.pkl', 'rb') as f:
+        status_encoder = pickle.load(f)
+    with open('approval_encoder.pkl', 'rb') as f:
+        approval_encoder = pickle.load(f)
     try:
-        scaler = pickle.load(open('scaler.pkl', 'rb'))
+        with open('scaler.pkl', 'rb') as f:
+            scaler = pickle.load(f)
     except FileNotFoundError:
         scaler = None
     return model, status_encoder, approval_encoder, scaler
@@ -41,21 +45,21 @@ if submitted:
     if income == 0 or credit_score == 0 or loan_amount == 0:
         st.warning('⚠️ กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการทำนาย')
     else:
-        # เตรียม input เป็น numpy array
-        input_array = np.array([[
-            income,
-            credit_score,
-            loan_amount,
-            dti_ratio,
-            status_encoder.transform([employment_status])[0]
-        ]])
-
-        # ถ้ามี scaler
-        if scaler:
-            input_array = scaler.transform(input_array)
-
-        # ทำนายผล
         try:
+            # เตรียม input เป็น numpy array
+            input_array = np.array([[ 
+                income,
+                credit_score,
+                loan_amount,
+                dti_ratio,
+                status_encoder.transform([employment_status])[0]
+            ]])
+
+            # ถ้ามี scaler
+            if scaler:
+                input_array = scaler.transform(input_array)
+
+            # ทำนายผล
             prediction = model.predict(input_array)
             result = approval_encoder.inverse_transform(prediction)[0]
 
