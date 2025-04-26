@@ -28,7 +28,7 @@ model, status_encoder, approval_encoder, scaler = load_model()
 
 
 st.title('🔎 Loan Approval Prediction')
-st.write('กรุณากรอกข้อมูลเพื่อทำนายผลการอนุมัติสินเชื่อ')
+st.write('Please enter your information to predict your loan approval status.')
 
 # Input form
 with st.form('input_form'):
