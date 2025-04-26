@@ -14,6 +14,12 @@ model = pickle.load(open('loan_approval_model.pkl', 'rb'))
 status_encoder = pickle.load(open('employment_encoder.pkl', 'rb'))
 approval_encoder = pickle.load(open('approval_encoder.pkl', 'rb'))
 
+# ถ้ามี scaler ต้องโหลดด้วย
+try:
+    scaler = pickle.load(open('scaler.pkl', 'rb'))
+except:
+    scaler = None
+
 # ส่วนหัวเว็บ
 st.title('Loan Approval Prediction')
 st.write('กรอกข้อมูลเพื่อทำนายผลการอนุมัติสินเชื่อ')
@@ -26,15 +32,23 @@ dti_ratio = st.number_input('Debt-to-Income Ratio (%)', min_value=0.0, max_value
 employment_status = st.selectbox('สถานะการทำงาน', status_encoder.classes_)
 
 if st.button('ทำนายผลการอนุมัติ'):
-    input_data = pd.DataFrame({
-        'Income': [income],
-        'Credit_Score': [credit_score],
-        'Loan_Amount': [loan_amount],
-        'DTI_Ratio': [dti_ratio],
-        'Employment_Status': [status_encoder.transform([employment_status])[0]]
-    })
+    # เตรียม input data
+    input_dict = {
+        'Income': income,
+        'Credit_Score': credit_score,
+        'Loan_Amount': loan_amount,
+        'DTI_Ratio': dti_ratio,
+        'Employment_Status': status_encoder.transform([employment_status])[0]
+    }
+    input_data = pd.DataFrame([input_dict])
 
-    prediction = model.predict(input_data)
+    # สเกลข้อมูล ถ้ามีการใช้ scaler
+    if scaler:
+        input_data_scaled = scaler.transform(input_data)
+        prediction = model.predict(input_data_scaled)
+    else:
+        prediction = model.predict(input_data)
+
     result = approval_encoder.inverse_transform(prediction)[0]
 
     st.success(f'ผลการทำนาย: {result}')
