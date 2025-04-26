@@ -6,6 +6,7 @@ Created on Sat Apr 26 21:34:49 2025
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import pickle
 
 # โหลด model และ encoders
@@ -33,35 +34,36 @@ with st.form('input_form'):
     loan_amount = st.number_input('🏦 จำนวนเงินที่ต้องการกู้ (Loan Amount)', min_value=0, format='%d')
     dti_ratio = st.number_input('📊 Debt-to-Income Ratio (%)', min_value=0.0, max_value=100.0, format='%f')
     employment_status = st.selectbox('🧑‍💼 สถานะการทำงาน', status_encoder.classes_)
-    
+
     submitted = st.form_submit_button('ทำนายผลการอนุมัติ')
 
 if submitted:
     if income == 0 or credit_score == 0 or loan_amount == 0:
         st.warning('⚠️ กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการทำนาย')
     else:
-        # เตรียมข้อมูล
-        input_dict = {
-            'Income': income,
-            'Credit_Score': credit_score,
-            'Loan_Amount': loan_amount,
-            'DTI_Ratio': dti_ratio,
-            'Employment_Status': status_encoder.transform([employment_status])[0]
-        }
-        input_data = pd.DataFrame([input_dict])
+        # เตรียม input เป็น numpy array
+        input_array = np.array([[
+            income,
+            credit_score,
+            loan_amount,
+            dti_ratio,
+            status_encoder.transform([employment_status])[0]
+        ]])
 
-        # ปรับข้อมูลด้วย scaler ถ้ามี
+        # ถ้ามี scaler
         if scaler:
-            input_data_scaled = scaler.transform(input_data)
-            prediction = model.predict(input_data_scaled)
-        else:
-            prediction = model.predict(input_data)
+            input_array = scaler.transform(input_array)
 
-        # แปลงผลลัพธ์กลับ
-        result = approval_encoder.inverse_transform(prediction)[0]
+        # ทำนายผล
+        try:
+            prediction = model.predict(input_array)
+            result = approval_encoder.inverse_transform(prediction)[0]
 
-        # แสดงผลลัพธ์
-        if result == 'Approved':
-            st.success(f'✅ ผลการทำนาย: {result} (ผ่านการอนุมัติ)')
-        else:
-            st.error(f'❌ ผลการทำนาย: {result} (ไม่ผ่านการอนุมัติ)')
+            # แสดงผลลัพธ์
+            if result == 'Approved':
+                st.success(f'✅ ผลการทำนาย: {result} (ผ่านการอนุมัติ)')
+            else:
+                st.error(f'❌ ผลการทำนาย: {result} (ไม่ผ่านการอนุมัติ)')
+
+        except Exception as e:
+            st.error(f'เกิดข้อผิดพลาดในการทำนาย: {e}')
