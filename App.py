@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 import pickle
 
-# โหลด model และ encoders
 @st.cache_resource
 def load_model():
     with open('loan_approval_model.pkl', 'rb') as f:
@@ -27,7 +26,7 @@ def load_model():
 
 model, status_encoder, approval_encoder, scaler = load_model()
 
-# ส่วนหัวเว็บ
+
 st.title('🔎 Loan Approval Prediction')
 st.write('กรุณากรอกข้อมูลเพื่อทำนายผลการอนุมัติสินเชื่อ')
 
@@ -46,7 +45,7 @@ if submitted:
         st.warning('⚠️ กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการทำนาย')
     else:
         try:
-            # เตรียม input เป็น numpy array
+            
             input_array = np.array([[ 
                 income,
                 credit_score,
@@ -55,15 +54,14 @@ if submitted:
                 status_encoder.transform([employment_status])[0]
             ]])
 
-            # ถ้ามี scaler
+            
             if scaler:
                 input_array = scaler.transform(input_array)
 
-            # ทำนายผล
+            
             prediction = model.predict(input_array)
             result = approval_encoder.inverse_transform(prediction)[0]
 
-            # แสดงผลลัพธ์
             if result == 'Approved':
                 st.success(f'✅ ผลการทำนาย: {result} (ผ่านการอนุมัติ)')
             else:
